@@ -1,0 +1,12 @@
+flask
+flask-cors
+geopandas
+pandas
+shapely
+python-dotenv
+google-generativeai
+pypdf
+gunicorn
+requests
+rtree
+matplotlib

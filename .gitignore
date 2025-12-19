@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Project Data
+# Exclude large generated analysis files (>25MB)
+data/analysis_*.geojson
+# Keep raw source data if reasonable key
+!data/cadastre_*.json
+
+# IDES
+.DS_Store
+.vscode/
+.idea/
