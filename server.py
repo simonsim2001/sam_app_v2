@@ -12,6 +12,8 @@ import re
 from pypdf import PdfReader
 import google.generativeai as genai
 from dotenv import load_dotenv
+import gzip
+import gc
 
 load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
@@ -159,14 +161,20 @@ else:
                 GLOBAL_GDF[col] = GLOBAL_GDF[col].astype(str)
                 print(f"Converted {col} to string", flush=True)
         
-        # Pre-compute JSON for performance
-        print("Caching GeoJSON in memory... (this may take a moment)", flush=True)
-        PARCELS_JSON = GLOBAL_GDF.to_json()
-        print(f"GeoJSON Cached. Size: {len(PARCELS_JSON)/1024/1024:.2f} MB", flush=True)
+        # Pre-compute JSON for performance -> NOW SAVING TO DISK FOR MEMORY
+        print("Saving merged GeoJSON to disk...", flush=True)
+        MERGED_FILE = os.path.join(DATA_DIR, "merged_parcels.json")
+        if os.path.exists(MERGED_FILE):
+             os.remove(MERGED_FILE)
+        
+        GLOBAL_GDF.to_file(MERGED_FILE, driver="GeoJSON")
+        print(f"Merged GeoJSON saved to {MERGED_FILE}", flush=True)
+        
+        # Optimize Memory: Force GC
+        gc.collect()
     else:
         print("CRITICAL: No data loaded!", flush=True)
         GLOBAL_GDF = None
-        PARCELS_JSON = None
 
 @app.route("/")
 def serve_index():
@@ -178,9 +186,7 @@ def serve_data(filename):
 
 @app.route("/api/parcels")
 def api_parcels():
-    if PARCELS_JSON is not None:
-        return Response(PARCELS_JSON, mimetype='application/json')
-    return jsonify({"error": "No data loaded"}), 500
+    return send_from_directory(DATA_DIR, "merged_parcels.json")
 
 @app.route("/agent/fetch-parcel-data", methods=["POST"])
 def agent_fetch():
